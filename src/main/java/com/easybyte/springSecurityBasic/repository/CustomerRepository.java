@@ -5,6 +5,7 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 /*
   CrudRepository: crud 연산을 위한 코드 자동 생성
@@ -18,5 +19,5 @@ public interface CustomerRepository extends CrudRepository<Customer, Long> {
     JPA 명명규칙
       findBy___
    */
-  List<Customer> findByEmail(String email);
+  Optional<Customer> findByEmail(String email);
 }

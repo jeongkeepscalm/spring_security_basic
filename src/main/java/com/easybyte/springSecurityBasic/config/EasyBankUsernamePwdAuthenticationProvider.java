@@ -10,6 +10,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
@@ -26,6 +28,7 @@ public class EasyBankUsernamePwdAuthenticationProvider implements Authentication
 
   private final CustomerRepository customerRepository;
   private final PasswordEncoder passwordEncoder;
+  private final UserDetailsService userDetailsService;
 
   @Override
   public Authentication authenticate(Authentication authentication) throws AuthenticationException {
@@ -33,18 +36,12 @@ public class EasyBankUsernamePwdAuthenticationProvider implements Authentication
     String email = authentication.getName();
     String pwd = authentication.getCredentials().toString();
     // 해당 정보를 바탕으로 DB 조회
-    List<Customer> customer = customerRepository.findByEmail(email);
-    if (customer.size() > 0) {
-      if (passwordEncoder.matches(pwd, customer.get(0).getPwd())) {
-        // 권한 저장
-        ArrayList<GrantedAuthority> authorities = new ArrayList<>();
-        authorities.add(new SimpleGrantedAuthority(customer.get(0).getRole()));
-        return new UsernamePasswordAuthenticationToken(email, pwd, authorities);
-      } else {
-        throw new BadCredentialsException("Invalid password!");
-      }
-    } else {
-      throw new BadCredentialsException("No user registered with this details!");
+    UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+    if (passwordEncoder.matches(pwd, userDetails.getPassword())) {
+      // Fetch Age details and perform validation to check if age >18
+      return new UsernamePasswordAuthenticationToken(email, pwd, userDetails.getAuthorities());
+    }else {
+      throw new BadCredentialsException("Invalid password!");
     }
   }
 
