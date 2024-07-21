@@ -9,9 +9,12 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
+import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.crypto.scrypt.SCryptPasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.provisioning.JdbcUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
@@ -47,7 +50,15 @@ public class ProjectSecurityConfig {
                     .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
             .addFilterAfter(new CsrfCookieFilter(), BasicAuthenticationFilter.class)
             .authorizeHttpRequests((res) -> res
-                    .requestMatchers("/myAccount", "/myBalance", "/myLoans", "/myCards", "/user").authenticated()
+                    /*.requestMatchers("/myAccount").hasAuthority("VIEWACCOUNT")
+                    .requestMatchers("/myLoans").hasAuthority("VIEWLOANS")
+                    .requestMatchers("/myCards").hasAuthority("VIEWCARDS")
+                    .requestMatchers("/myBalance").hasAnyAuthority("VIEWACCOUNT", "VIEWBALANCE")*/
+                    .requestMatchers("/myAccount").hasAnyRole("USER", "ADMIN")
+                    .requestMatchers("/myLoans").hasRole("USER")
+                    .requestMatchers("/myCards").hasRole("USER")
+                    .requestMatchers("/myBalance").hasAnyRole("USER", "ADMIN")
+                    .requestMatchers("/user").authenticated()
                     .requestMatchers("/notices", "/register", "/contact").permitAll());
     http.formLogin(withDefaults());
     http.httpBasic(withDefaults());
@@ -140,25 +151,26 @@ public class ProjectSecurityConfig {
     return new JdbcUserDetailsManager(dataSource);
   }
 
-  /**
-   * 해당 프로젝트에서 PasswordEncoder 에서 지정한 방식을 사용하라고 명시
-   *
-   * PasswordEncoder Interface
-   * 	  encode(): PasswordEncoder 에 설정한 그에 상응하는 암호화 적차가 이뤄진다.
-   * 	  matches(): 입력받은 비밀번호화 암호화 된 비밀번호를 비교한다.
-   *
-   * NoOpPasswordEncoder:
-   *    시큐리티에서 제공하는 가장 간단한 패스워드 인코더
-   *    비밀번호를 일반 텍스트 처리(비밀번호 암호화 및 해싱을 수행하지 않는다.)
-   *    프로덕션 환경에서 권장되지 않는다.(유저의 자격증명을 코드 내부와 웹 어플리케이션의 메모리 내부에 저장하기 때문이다.)
-   * 운영계에 고려해야할 passwordEncoder
-   * 	  BCryptPasswordEncoder: BCrypt 해싱 알고리즘 사용
-   * 	  SCryptPasswordEncoder: BCryptPasswordEncoder 고급 버전
-   * 	  Argon2PasswordEncoder: 가장 안전하지만 많은 자원 요구
+  /*
+     해당 프로젝트에서 PasswordEncoder 에서 지정한 방식을 사용하라고 명시
+
+     PasswordEncoder Interface
+        encode(): PasswordEncoder 에 설정한 그에 상응하는 암호화 적차가 이뤄진다.
+        matches(): 입력받은 비밀번호화 암호화 된 비밀번호를 비교한다.
+
+     NoOpPasswordEncoder:
+        시큐리티에서 제공하는 가장 간단한 패스워드 인코더
+        비밀번호를 일반 텍스트 처리(비밀번호 암호화 및 해싱을 수행하지 않는다.)
+        프로덕션 환경에서 권장되지 않는다.(유저의 자격증명을 코드 내부와 웹 어플리케이션의 메모리 내부에 저장하기 때문이다.)
+
+     운영계에 고려해야할 passwordEncoder
+        BCryptPasswordEncoder: BCrypt 해싱 알고리즘 사용
+        SCryptPasswordEncoder: BCryptPasswordEncoder 고급 버전
+        Argon2PasswordEncoder: 가장 안전하지만 많은 자원 요구
    */
   @Bean
   public PasswordEncoder passwordEncoder() {
-//    return NoOpPasswordEncoder.getInstance();
+    /*return NoOpPasswordEncoder.getInstance();*/
     return new BCryptPasswordEncoder();
   }
 
